@@ -1,8 +1,9 @@
-"""Ours 检索的 torch 向量化评分(可选 CUDA)。
+"""Torch-vectorized scoring for Ours retrieval (optional CUDA).
 
-移植 ``scripts/ours_torch_accel.py``:构建 / BGE 嵌入仍走 numpy,仅把评分算术镜像到
-torch tensor;``to_torch(device)`` 之后,``rank(order)`` 由 torch 完成。
-不显式调用 ``to_torch`` 时等价于父类 numpy 实现。
+Port of ``scripts/ours_torch_accel.py``: construction and BGE embeddings stay in
+numpy; only the scoring arithmetic is mirrored onto torch tensors. After
+``to_torch(device)``, ``rank`` is computed by torch. Without an explicit
+``to_torch`` call it is equivalent to the parent numpy implementation.
 """
 
 from __future__ import annotations

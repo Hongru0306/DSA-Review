@@ -1,13 +1,14 @@
-"""retrieval —— 检索方法(Ours + 对比基线)。"""
+"""Retrieval methods: Ours + real-RAG baselines (GraphRAG / LightRAG / HippoRAG / RAPTOR) + BM25 / dense BGE."""
 
 from retrieval.base import Retriever
 from retrieval.bm25 import BM25
 from retrieval.dense import DenseNaive
-from retrieval.lightrag_lite import LightRAGLite
+from retrieval.graphrag import GraphRAGRetriever
+from retrieval.hipporag import HippoRAGRetriever
+from retrieval.lightrag import LightRAGRetriever
 from retrieval.ours import OursRetriever
 from retrieval.ours_torch import OursRetrieverTorch
-from retrieval.ppr import GraphRAGLite, HippoRAGLite
-from retrieval.raptor import RAPTORLite
+from retrieval.raptor import RaptorRetriever
 
 __all__ = [
     "Retriever",
@@ -15,8 +16,8 @@ __all__ = [
     "OursRetrieverTorch",
     "DenseNaive",
     "BM25",
-    "GraphRAGLite",
-    "HippoRAGLite",
-    "LightRAGLite",
-    "RAPTORLite",
+    "GraphRAGRetriever",
+    "LightRAGRetriever",
+    "HippoRAGRetriever",
+    "RaptorRetriever",
 ]

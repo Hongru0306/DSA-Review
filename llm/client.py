@@ -1,9 +1,10 @@
-"""统一 LLM 客户端:DeepSeek 与 OpenAI 兼容(Qwen vLLM)。
+"""Unified LLM client: DeepSeek and OpenAI-compatible (Qwen vLLM).
 
-移植 ``scripts/run_construction_review_v2.py`` DeepSeekAPI(同步 urllib,JSON 模式,
-thinking 关闭,重试 / 退避,剥离 thinking 块)与 ``evidence_gated_generate.py``
-ChatClient(Qwen ``enable_thinking=False``)。另提供 ``async chat(...)`` 供离线
-构图 / 查询缓存构建(``graph.llm_builder``)使用。
+Ports ``scripts/run_construction_review_v2.py`` DeepSeekAPI (sync urllib, JSON
+mode, thinking disabled, retries / backoff, strips thinking blocks) and
+``evidence_gated_generate.py`` ChatClient (Qwen ``enable_thinking=False``). Also
+provides ``async chat(...)`` for offline graph / query-cache construction
+(``graph.llm_builder``).
 """
 
 from __future__ import annotations
@@ -26,11 +27,11 @@ def normalize_chat_url(base_url: str) -> str:
     return f"{base_url}/chat/completions"
 
 
-# ---- JSON 解析与确定性修复(移植 run_construction_review_v2.py)----
+# ---- JSON parsing and deterministic repair (ported from run_construction_review_v2.py) ----
 
 
 def repair_invalid_json_backslash_escapes(value: str) -> str:
-    """仅把 JSON 字符串内非法的反斜杠转义引用为双重反斜杠。"""
+    """Quote only the illegal backslash escapes inside JSON strings."""
     output: list[str] = []
     in_string = False
     index = 0
@@ -69,7 +70,7 @@ def repair_invalid_json_backslash_escapes(value: str) -> str:
 
 
 def repair_missing_json_delimiter_commas(value: str, *, max_repairs: int = 64) -> str | None:
-    """仅在结构明确处插入缺失的 JSON 逗号;歧义返回 None。"""
+    """Insert missing JSON commas only where structurally unambiguous; return None on ambiguity."""
     candidate = str(value)
     repairs = 0
     while repairs < max_repairs:
@@ -147,7 +148,7 @@ def audited_repaired_json_object(parsed: Any, marker: str) -> dict[str, Any]:
 
 
 def parse_json_object_content(content: str) -> dict[str, Any]:
-    """解析单个模型 JSON 对象,优先严格 JSON,再依次确定性修复。"""
+    """Parse a single model JSON object: strict JSON first, then deterministic repairs in order."""
     raw = str(content).strip()
     if raw.startswith("```"):
         raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw, flags=re.I | re.S).strip()
@@ -192,11 +193,11 @@ def parse_json_object_content(content: str) -> dict[str, Any]:
         return audited_repaired_json_object(parsed, "json_repair")
 
 
-# ---- 客户端 ----
+# ---- Client ----
 
 
 class LLMClient:
-    """线程安全的 OpenAI 兼容客户端,Text / JSON 模式 + 异步 chat。"""
+    """Thread-safe OpenAI-compatible client, Text / JSON modes + async chat."""
 
     def __init__(
         self,
@@ -227,7 +228,7 @@ class LLMClient:
         with self._lock:
             return self._success_count
 
-    # ---- 请求体 ----
+    # ---- Request body ----
 
     def _body(
         self,
@@ -259,7 +260,7 @@ class LLMClient:
             ).strip()
         return content
 
-    # ---- 同步调用(urllib)----
+    # ---- Synchronous call (urllib) ----
 
     def _call(
         self,
@@ -355,7 +356,7 @@ class LLMClient:
             f"{type(last_error).__name__}: {last_error}"
         )
 
-    # ---- 异步调用(aiohttp,供离线缓存构建)----
+    # ---- Asynchronous call (aiohttp, for offline cache construction) ----
 
     async def chat(
         self,
@@ -387,7 +388,7 @@ class LLMClient:
                                 str(obj["choices"][0]["message"]["content"])
                             )
                         raise RuntimeError(f"HTTP {resp.status}: {text[:500]}")
-            except Exception as exc:  # noqa: BLE001 — 网络重试
+            except Exception as exc:  # noqa: BLE001 - network retry
                 last_error = f"{type(exc).__name__}: {exc}"
                 if attempt == 3:
                     break

@@ -1,11 +1,12 @@
-"""生成答案指标:字符 / 词元 P-R-F1、EM、ROUGE-L、BLEU1。
+"""Generation metrics: char / token P-R-F1, EM, ROUGE-L, BLEU1.
 
-移植自三处实验代码,名称与口径尽量保留:
-- ``char_scores``/``token_scores``/``rouge_l_f1``/``bleu1``: GraphRAG-Bench 风格
-  (``scripts/eval_rag_at5.py``)。
-- ``char_prf``: 条款问答主口径 —— 去空白后字符多重集(``score_and_emit_tables_20260713.py``),
-  输出已归一化到 [0,1](源码再乘 100 展示)。
-- ``token_prf``: SQuAD 官方归一化(小写、去标点、去 a/an/the)。
+Ported from three places in the experiment code, keeping names and conventions:
+- ``char_scores``/``token_scores``/``rouge_l_f1``/``bleu1``: GraphRAG-Bench style
+  (``scripts/eval_rag_at5.py``).
+- ``char_prf``: main clause-QA convention -- whitespace-stripped character
+  multiset (``score_and_emit_tables_20260713.py``); normalized to [0,1] here
+  (the source multiplies by 100 for display).
+- ``token_prf``: SQuAD official normalization (lowercase, strip punctuation, drop a/an/the).
 """
 
 from __future__ import annotations
@@ -19,14 +20,14 @@ _TEXT_RE = re.compile(r"[^0-9a-z一-鿿\s]")
 
 
 def normalize_answer(text) -> str:
-    """GraphRAG-Bench 风格:小写,保留汉字/数字/英文,空白合并。"""
+    """GraphRAG-Bench style: lowercase, keep CJK/digits/latin, collapse whitespace."""
     text = str(text or "").lower()
     text = _TEXT_RE.sub(" ", text)
     return re.sub(r"\s+", " ", text).strip()
 
 
 def official_normalize(text) -> str:
-    """SQuAD 官方归一化:小写、去标点、去 a/an/the。"""
+    """SQuAD official normalization: lowercase, strip punctuation, drop a/an/the."""
     text = (text or "").lower()
     text = "".join(char for char in text if char not in set(string.punctuation))
     text = re.sub(r"\b(a|an|the)\b", " ", text)
@@ -57,7 +58,7 @@ def token_scores(pred: str, gold: str) -> tuple[float, float, float]:
 
 
 def char_prf(pred, ref) -> tuple[float, float, float]:
-    """条款问答主口径:去空白后字符多重集 F1,归一化到 [0,1]。"""
+    """Main clause-QA convention: whitespace-stripped character multiset F1, normalized to [0,1]."""
     p = re.sub(r"\s+", "", str(pred or ""))
     g = re.sub(r"\s+", "", str(ref or ""))
     if not p or not g:
@@ -70,7 +71,7 @@ def char_prf(pred, ref) -> tuple[float, float, float]:
 
 
 def token_prf(pred, ref) -> tuple[float, float, float]:
-    """SQuAD 官方归一化后词元 F1,归一化到 [0,1]。"""
+    """Token F1 after SQuAD official normalization, normalized to [0,1]."""
     p = official_normalize(pred).split()
     g = official_normalize(ref).split()
     if not p or not g:

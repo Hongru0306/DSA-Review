@@ -1,8 +1,8 @@
-"""指标聚合:宏平均 ×100、Ret.Avg / Gen.Avg 复合。
+"""Metric aggregation: macro-mean x100, Ret.Avg / Gen.Avg composites.
 
-口径与实验表格一致:
-- 检索:``Ret.Avg = (ACC + MRR + nDCG) / 3``(或含 Coverage 的四元均值)。
-- 生成:``Gen.Avg = mean(char_f1, token_f1, ...)`` 的三 / 多件套均值。
+Conventions matching the experiment tables:
+- retrieval: ``Ret.Avg = (ACC + MRR + nDCG) / 3`` (or a 4-way mean including Coverage).
+- generation: ``Gen.Avg = mean(char_f1, token_f1, ...)``, the mean over components.
 """
 
 from __future__ import annotations
@@ -13,17 +13,17 @@ from typing import Any
 
 
 def macro_mean(values: Iterable[float]) -> float:
-    """宏平均(每题指标后取均值)。"""
+    """Macro-mean (per-query metrics averaged)."""
     return mean(values) if values else 0.0
 
 
 def mean_100(values: Iterable[float]) -> float:
-    """宏平均后乘 100 展示。"""
+    """Macro-mean multiplied by 100 for display."""
     return mean(values) * 100 if values else 0.0
 
 
 def ret_avg(acc: float, mrr: float, ndcg: float, coverage: float | None = None) -> float:
-    """检索复合平均。"""
+    """Retrieval composite average."""
 
     if coverage is None:
         return (acc + mrr + ndcg) / 3.0
@@ -31,7 +31,7 @@ def ret_avg(acc: float, mrr: float, ndcg: float, coverage: float | None = None) 
 
 
 def gen_avg(components: Iterable[float]) -> float:
-    """生成复合平均(对若干分数分量取均值)。"""
+    """Generation composite average (mean over the given score components)."""
     return mean(components) if components else 0.0
 
 
@@ -39,9 +39,9 @@ def summarize_metric_rows(
     rows: list[dict[str, Any]],
     key_aliases: dict[str, str] | None = None,
 ) -> dict[str, float]:
-    """对每行词典在数值键上求宏平均(% 展示)。
+    """Macro-average numeric keys over a list of row dicts (returned in %).
 
-    ``key_aliases`` 统一别名,例如 ``{"acc": "ACC", "mrr": "MRR"}``。
+    ``key_aliases`` renames keys, e.g. ``{"acc": "ACC", "mrr": "MRR"}``.
     """
     if not rows:
         return {}
@@ -63,7 +63,7 @@ def summarize_by_group(
     group_key: str,
     aliases: dict[str, str] | None = None,
 ) -> dict[Any, dict[str, float]]:
-    """按某个字段(如 hop)分组后逐组宏平均。"""
+    """Group rows by a field (e.g. hop) and macro-average each group."""
     groups: dict[Any, list[dict[str, Any]]] = {}
     for row in rows:
         groups.setdefault(row.get(group_key), []).append(row)

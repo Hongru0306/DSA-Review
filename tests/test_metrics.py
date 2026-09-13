@@ -1,4 +1,4 @@
-"""评测指标:手工可验证的真值断言。"""
+"""Evaluation metrics: hand-verifiable ground-truth assertions."""
 
 from __future__ import annotations
 

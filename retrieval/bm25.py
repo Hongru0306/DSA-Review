@@ -1,7 +1,8 @@
-"""Okapi BM25 检索基线。
+"""Okapi BM25 retrieval baseline.
 
-移植 ``scripts/eval_rag_at5.py`` BM25:k1=1.2 / b=0.75,
-``idf = ln(1 + (N-df+0.5)/(df+0.5))``,权重 ``idf * tf * 2.2 / (tf + k1*(1-b+b*dl/avgdl))``。
+Port of ``scripts/eval_rag_at5.py`` BM25: k1=1.2 / b=0.75,
+``idf = ln(1 + (N-df+0.5)/(df+0.5))``,
+weight ``idf * tf * 2.2 / (tf + k1*(1-b+b*dl/avgdl))``.
 """
 
 from __future__ import annotations

@@ -1,6 +1,7 @@
-"""稠密 BGE 检索基线(NaiveRAG)。
+"""Dense BGE retrieval baseline (NaiveRAG).
 
-移植 ``scripts/eval_rag_at5.py`` DenseNaive:L2 归一化嵌入后整库余弦扫描。
+Port of ``scripts/eval_rag_at5.py`` DenseNaive: L2-normalized embeddings with a
+full-corpus cosine scan.
 """
 
 from __future__ import annotations

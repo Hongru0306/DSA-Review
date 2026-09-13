@@ -1,4 +1,4 @@
-"""基线检索:均实现 build/rank 协议,返回全序;BM25 内容级判定。"""
+"""Baselines: BM25 / dense return a full order; adapters exist and map doc-id markers."""
 
 from __future__ import annotations
 
@@ -7,17 +7,18 @@ import pytest
 from retrieval import (
     BM25,
     DenseNaive,
-    GraphRAGLite,
-    HippoRAGLite,
-    LightRAGLite,
-    RAPTORLite,
+    GraphRAGRetriever,
+    HippoRAGRetriever,
+    LightRAGRetriever,
+    RaptorRetriever,
 )
+from retrieval._support import parse_doc_ids, require, tag_docs
 
-ALL_BASELINES = [BM25, DenseNaive, GraphRAGLite, HippoRAGLite, LightRAGLite, RAPTORLite]
+SIMPLE_BASELINES = [BM25, DenseNaive]
 
 
-@pytest.mark.parametrize("factory", ALL_BASELINES)
-def test_baseline_returns_full_order(factory, corpus, encoder):
+@pytest.mark.parametrize("factory", SIMPLE_BASELINES)
+def test_simple_baseline_returns_full_order(factory, corpus, encoder):
     method = factory()
     method.build(corpus, encoder)
     ranking = method.rank("混凝土养护时间不少于14天")
@@ -34,7 +35,7 @@ def test_bm25_ascii_corpus_ranks_matching_doc_first(encoder):
     bm25 = BM25()
     bm25.build(corpus, encoder)
     ranking = bm25.rank("concrete cured fourteen days")
-    assert ranking[0] == 0  # 唯一同时含 cured / fourteen / days 的文档
+    assert ranking[0] == 0  # the only doc containing cured / fourteen / days
 
 
 def test_bm25_no_overlap_terms_still_full_rank(corpus, encoder):
@@ -52,14 +53,27 @@ def test_dense_topk_is_hit_or_trivial(corpus, encoder):
     assert len(set(top3)) == 3
 
 
-def test_method_names_present():
-    expected = {
-        "BM25": "BM25",
-        "DenseNaive": "NaiveRAG",
-        "GraphRAGLite": "GraphRAG-lite",
-        "HippoRAGLite": "HippoRAG-lite",
-        "LightRAGLite": "LightRAG-lite",
-        "RAPTORLite": "RAPTOR-lite",
-    }
-    for factory, name in expected.items():
-        assert getattr(__import__("retrieval", fromlist=[factory]), factory)().name == name
+def test_simple_baseline_names():
+    assert BM25().name == "BM25"
+    assert DenseNaive().name == "NaiveRAG"
+
+
+def test_adapter_classes_expose_names():
+    assert GraphRAGRetriever.name == "GraphRAG"
+    assert LightRAGRetriever.name == "LightRAG"
+    assert HippoRAGRetriever.name == "HippoRAG"
+    assert RaptorRetriever.name == "RAPTOR"
+
+
+def test_docid_tagging_and_parsing():
+    tagged = tag_docs(["alpha", "beta"])
+    assert tagged[0].startswith("[DOCID:0]")
+    assert tagged[1].startswith("[DOCID:1]")
+    context = "[DOCID:1] beta text ... [DOCID:0] alpha ... [DOCID:9] out of range"
+    assert parse_doc_ids(context, corpus_size=2) == [1, 0]
+    assert parse_doc_ids(context, corpus_size=2, k=1) == [1]
+
+
+def test_require_raises_clear_import_error():
+    with pytest.raises(ImportError, match="nonexistent_baseline_module_xyz"):
+        require("nonexistent_baseline_module_xyz", "install hint")

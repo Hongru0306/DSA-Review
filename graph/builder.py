@@ -1,11 +1,12 @@
-"""确定性离线构图:语料切片 -> 实体 / 关系图,无需 LLM 与标注。
+"""Deterministic offline graph construction: corpus chunks -> entity / relation graph, no LLM or labels.
 
-移植 ``scripts/build_graphrag_novel_context5_graph_local.py``:
-- 专名短语(``PROPER_RE``)+ 单 token 高 IDF 概念抽取,按
-  ``8.0 + 1.5*len(parts) + Sum(log1p(corpus/df))`` 打分取 top-k;
-- 同一句内共现的实体两两成关系;兜底相邻实体链。
-输出以 ``utils.text.doc_cache_key``(规范空白后 SHA-1)为键,与
-``OursRetriever`` 的 ``corpus_graph`` 输入对齐。
+Port of ``scripts/build_graphrag_novel_context5_graph_local.py``:
+- proper-name phrases (``PROPER_RE``) + single high-IDF tokens, scored by
+  ``8.0 + 1.5*len(parts) + Sum(log1p(corpus/df))`` and truncated to the top-k;
+- entities co-occurring in the same sentence form pairwise relations; falls back
+  to an adjacent-entity chain.
+Output is keyed by ``utils.text.doc_cache_key`` (SHA-1 of the whitespace-normalized
+text), aligned with the ``corpus_graph`` input of ``OursRetriever``.
 """
 
 from __future__ import annotations
@@ -40,7 +41,7 @@ def candidate_entities(
     corpus_size: int,
     max_entities: int,
 ) -> tuple[list[str], dict[str, set[int]]]:
-    """抽取每篇的候选实体及其所在句子下标。"""
+    """Extract candidate entities per document and the sentence indices they appear in."""
     sentences = [part.strip() for part in SENTENCE_RE.split(text) if part.strip()]
     candidates: dict[str, dict[str, Any]] = {}
 
@@ -106,7 +107,7 @@ def relation_pairs(
     sentence_membership: dict[str, set[int]],
     max_relations: int,
 ) -> list[list[str]]:
-    """同句共现实体对;无共现时回退相邻实体链。"""
+    """Pairs of entities co-occurring in a sentence; falls back to an adjacent-entity chain."""
     keys = [normalized_entity(entity) for entity in entities]
     output: list[list[str]] = []
     seen: set[tuple[str, str]] = set()
@@ -129,14 +130,14 @@ def relation_pairs(
 
 
 def math_log1p(value: float) -> float:
-    """log1p 包装,避免裸 import math 语义混淆(gk 代码直接用 math.log1p)。"""
+    """Thin log1p wrapper (the source code calls math.log1p directly)."""
     import math
 
     return math.log1p(value)
 
 
 class DeterministicGraphBuilder:
-    """语料 -> ``{cache_key: {"entities": [...], "relations": [[a,b],...], "llm_ok": False}}``。"""
+    """Corpus -> ``{cache_key: {"entities": [...], "relations": [[a,b],...], "llm_ok": False}}``."""
 
     def __init__(
         self,
@@ -171,5 +172,5 @@ def build_corpus_graph(
     max_entities: int = 24,
     max_relations: int = 48,
 ) -> dict[str, dict[str, Any]]:
-    """模块级便捷入口,等价于 ``DeterministicGraphBuilder(...).build(corpus)``。"""
+    """Module-level convenience, equivalent to ``DeterministicGraphBuilder(...).build(corpus)``."""
     return DeterministicGraphBuilder(max_entities, max_relations).build(corpus)

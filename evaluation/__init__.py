@@ -1,4 +1,4 @@
-"""evaluation —— 检索 / 生成 / 修订指标与聚合。"""
+"""Retrieval / generation / revision metrics and aggregation."""
 
 from evaluation.aggregate import (
     gen_avg,

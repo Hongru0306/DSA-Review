@@ -1,4 +1,4 @@
-"""utils —— 文本与 IO 工具。"""
+"""Text and IO utilities."""
 
 from utils.io import append_jsonl, read_json, read_jsonl, write_json, write_jsonl
 from utils.text import (

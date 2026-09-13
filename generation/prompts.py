@@ -1,11 +1,12 @@
-"""所有 prompt 模板集中管理,逐字移植自实验脚本。
+"""All prompt templates centralized here, ported verbatim from the experiment scripts.
 
-来源行号见各注释;``QA`` 生成 / ``review`` 的模板在生成模块中引用。
+Source line numbers are noted per section; QA / review templates are referenced
+in the generation modules.
 """
 
 from __future__ import annotations
 
-# ---- 构图 / 查询实体关系(scripts/eval_rag_at5.py L1117-1140)----
+# ---- Graph construction / query entity-relation (scripts/eval_rag_at5.py L1117-1140) ----
 
 ENTITY_PROMPT = """Extract key technical entities from the question.
 Return at most {max_terms} short noun phrases, one per line. Do not number them.
@@ -31,7 +32,7 @@ Rules:
 Text:
 {text}"""
 
-# ---- QA 证据问答(autotune/.../run_construction_qa_long_generation_v42.py build_prompt)----
+# ---- QA evidence answering (autotune/.../run_construction_qa_long_generation_v42.py build_prompt) ----
 
 QA_SYSTEM = "严谨回答建筑规范问题；不输出思考过程，不拒答。"
 

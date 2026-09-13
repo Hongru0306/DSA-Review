@@ -1,4 +1,4 @@
-"""Ours 子图检索:手工对照评分、完整序、参数默认值。"""
+"""Ours subgraph retrieval: hand-derived scoring, full ordering, parameter defaults."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from utils.text import doc_cache_key
 
 
 def _tiny_setup(encoder):
-    """两篇各含单实体的语料 + 显式 corpus_graph 与 qcache,使一切可手工推导。"""
+    """Two single-entity docs plus explicit corpus_graph and qcache, so everything is hand-derivable."""
     corpus = ["AAA", "BBB"]
     corpus_graph = {
         doc_cache_key("AAA"): {"entities": ["AAA"], "relations": []},
@@ -28,7 +28,7 @@ def _tiny_setup(encoder):
 
 
 def _manual_scores(retriever, encoder):
-    """按论文公式独立重算(两篇单实体场景)。"""
+    """Independently recompute the paper score (two single-entity docs)."""
     enc_a = encoder.encode_single("AAA")
     enc_b = encoder.encode_single("BBB")
     c = float(np.dot(enc_a, enc_b))

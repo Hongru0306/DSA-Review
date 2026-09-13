@@ -1,8 +1,12 @@
-"""全链路演示:合成语料 -> 确定性构图 -> 全部检索方法 + 指标。
+"""End-to-end demo: synthetic corpus -> deterministic graph -> retrievers + metrics.
 
-无需数据文件、无需下载模型、无需 LLM。运行:
-    python examples/demo.py
-(Windows 控制台若中文乱码,先 ``set PYTHONIOENCODING=utf-8`` 或只观察指标数字)
+No data files, no model downloads, no LLM required. Run:
+    python core/examples/demo.py
+(If Chinese output is garbled on Windows, `set PYTHONIOENCODING=utf-8` first.)
+
+The real-RAG baseline adapters (GraphRAG / LightRAG / HippoRAG / RAPTOR) are not
+run here because they need their optional dependencies and an LLM endpoint; the
+offline Ours / BM25 / dense methods run without them. See requirements-baselines.txt.
 """
 
 from __future__ import annotations
@@ -11,26 +15,18 @@ import hashlib
 import sys
 from pathlib import Path
 
-# 保证从任意目录直接运行 ``python examples/demo.py`` 时能 import 顶层模块
+# Allow running `python core/examples/demo.py` from any directory.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import numpy as np
 
 from evaluation import retrieval_metrics
 from graph import build_corpus_graph
-from retrieval import (
-    BM25,
-    DenseNaive,
-    GraphRAGLite,
-    HippoRAGLite,
-    LightRAGLite,
-    OursRetriever,
-    RAPTORLite,
-)
+from retrieval import BM25, DenseNaive, OursRetriever
 
 
 class DummyEncoder:
-    """确定性假编码器(按文本 SHA-1 种子生成 L2 归一化向量),仅供演示。"""
+    """Deterministic fake encoder (SHA-1-seeded L2-normalized vectors), demo only."""
 
     dim = 64
 
@@ -70,10 +66,6 @@ def main() -> None:
         "Ours": ours,
         "BM25": BM25(),
         "NaiveRAG": DenseNaive(),
-        "GraphRAG-lite": GraphRAGLite(),
-        "HippoRAG-lite": HippoRAGLite(),
-        "LightRAG-lite": LightRAGLite(),
-        "RAPTOR-lite": RAPTORLite(),
     }
     for method in methods.values():
         method.build(CORPUS, encoder)

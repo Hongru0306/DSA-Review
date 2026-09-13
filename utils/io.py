@@ -1,4 +1,4 @@
-"""JSON / JSONL 读写与原子写(Windows 安全)。"""
+"""JSON / JSONL read-write with atomic writes (Windows-safe)."""
 
 from __future__ import annotations
 

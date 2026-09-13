@@ -1,4 +1,4 @@
-"""llm —— LLM 客户端(DeepSeek / Qwen vLLM)。"""
+"""LLM client (DeepSeek / Qwen vLLM)."""
 
 from llm.client import (
     LLMClient,

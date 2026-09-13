@@ -1,8 +1,8 @@
-"""条款归因文档审查(论文 Algorithm 3):逐句检索 -> 门控审查 -> 解析打分。
+"""Clause-grounded document review (paper Algorithm 3): per-sentence retrieval -> gated review -> parse & score.
 
-移植 ``scripts/run_construction_review_v2.py`` 的 ``evidence_block`` /
+Port of ``scripts/run_construction_review_v2.py`` ``evidence_block`` /
 ``review_generation_prompt`` / ``parse_has_error`` /
-``extract_predicted_correct_sentence`` / ``dual_generation_score_fields``。
+``extract_predicted_correct_sentence`` / ``dual_generation_score_fields``.
 """
 
 from __future__ import annotations
@@ -25,13 +25,13 @@ GENERATION_SCORE_VERSION = "unconditional-direct-revision-char-plus-diff-and-emb
 
 
 def direct_clause_text(text: Any, limit: int = 900) -> str:
-    """去除 "▼" 后的条文说明,取规范空白后前 limit 字符。"""
+    """Drop the "▼" clause commentary and return the first ``limit`` chars of the whitespace-normalized text."""
     value = str(text or "").split("▼", 1)[0]
     return normalize_space(value)[:limit]
 
 
 def full_clause_text(text: Any) -> str:
-    """去条文说明、不截断的正文。"""
+    """Full clause text with commentary removed, not truncated."""
     return normalize_space(str(text or "").split("▼", 1)[0])
 
 
@@ -63,7 +63,7 @@ def review_generation_prompt(
     retrieval_row: dict[str, Any],
     use_direct_gate: bool = True,
 ) -> str:
-    """审查 prompt;``use_direct_gate=True`` 用 batch-86 起的"直接冲突门控"版本。"""
+    """Review prompt; ``use_direct_gate=True`` uses the batch-86+ "direct contradiction gate" version."""
     scenario_note = ""
     if retrieval_row.get("method") == "Ours":
         scenario_note = REVIEW_SCENARIO_NOTE if use_direct_gate else REVIEW_SCENARIO_NOTE_PRE
@@ -84,7 +84,7 @@ def generate_review(
     temperature: float = 0.0,
     max_attempts: int = 4,
 ) -> str:
-    """调用 LLM 并用格式校验重试;``client`` 需有 ``call_text(system, user, max_tokens=..., temperature=...)``。"""
+    """Call the LLM with format-validation retries; ``client`` needs ``call_text(system, user, max_tokens=..., temperature=...)``."""
     prompt = review_generation_prompt(row, retrieval_row)
     prediction = client.call_text(REVIEW_SYSTEM, prompt, max_tokens=max_tokens, temperature=temperature)
     for _ in range(1, max_attempts):
@@ -99,7 +99,7 @@ def generate_review(
     return prediction
 
 
-# ---- 解析 ----
+# ---- Parsing ----
 
 def parse_has_error(text: Any) -> bool | None:
     value = normalize_space(text)
@@ -115,7 +115,7 @@ def parse_has_error(text: Any) -> bool | None:
 
 
 def extract_predicted_correct_sentence(prediction: Any, review_sentence: Any) -> str:
-    """从固定两段式答案中提取最终替换句;合规当且仅当保持原句。"""
+    """Extract the model's final replacement sentence from the fixed two-part answer; compliant means the original sentence is kept."""
     text = str(prediction or "").strip()
     matches = list(re.finditer(r"修改建议[：:]", text))
     if not matches:
@@ -137,7 +137,7 @@ def extract_predicted_correct_sentence(prediction: Any, review_sentence: Any) ->
 
 
 def dual_generation_score_fields(prediction: Any, case: dict[str, Any]) -> dict[str, Any]:
-    """把单案生成输出解析并打分为各分数域(不含嵌入域,嵌入另行补算)。"""
+    """Parse a single case's generation output and score it into the score fields (embedding fields are computed separately)."""
     prediction_text = str(prediction or "")
     review_sentence = normalize_space(case.get("review_sentence", ""))
     predicted_correct_sentence = extract_predicted_correct_sentence(prediction_text, review_sentence)

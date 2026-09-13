@@ -1,7 +1,8 @@
-"""用 LLM 离线构建 corpus_graph 与查询 qcache(支持增量落盘)。
+"""Build the corpus_graph and query qcache offline with an LLM (incremental writes).
 
-移植 ``scripts/eval_rag_at5.py`` 的 ``build_corpus_graph_cache`` /
-``build_ours_query_cache``;``llm`` 需提供 ``async chat(messages, temperature, max_tokens)``。
+Port of ``scripts/eval_rag_at5.py`` ``build_corpus_graph_cache`` /
+``build_ours_query_cache``; ``llm`` must provide
+``async chat(messages, temperature, max_tokens)``.
 """
 
 from __future__ import annotations
@@ -19,7 +20,7 @@ from utils.text import doc_cache_key, extract_terms, normalize_space
 
 
 def parse_corpus_graph(text: str, fallback_text: str) -> dict[str, Any]:
-    """解析 LLM 返回的构图 JSON;失败回退启发式实体。"""
+    """Parse the LLM graph JSON; fall back to heuristic entities on failure."""
     match = re.search(r"\{[\s\S]*\}", text or "")
     data: dict[str, Any] = {}
     if match:
@@ -51,7 +52,7 @@ async def build_corpus_graph_cache(
     llm: Any,
     concurrent: int,
 ) -> dict[str, dict[str, Any]]:
-    """逐条条款调用 LLM 抽关系图,写入 ``cache_path``(JSON),返回全量缓存。"""
+    """Call the LLM per clause to extract a relation graph, write it to ``cache_path`` (JSON), return the full cache."""
     cache: dict[str, dict[str, Any]] = (
         json.loads(Path(cache_path).read_text(encoding="utf-8"))
         if Path(cache_path).exists()
@@ -108,7 +109,7 @@ async def build_query_cache(
     llm: Any,
     concurrent: int,
 ) -> dict[str, dict[str, Any]]:
-    """逐问题用 LLM 抽取实体与关系,写入 ``cache_path``,返回全量 qcache。"""
+    """Extract entities and relations per question with the LLM, write to ``cache_path``, return the full qcache."""
     cache: dict[str, dict[str, Any]] = (
         json.loads(Path(cache_path).read_text(encoding="utf-8"))
         if Path(cache_path).exists()

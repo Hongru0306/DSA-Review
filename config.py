@@ -1,36 +1,38 @@
-"""全局常量与默认参数,与实验代码 / 论文取值对齐。
+"""Global constants and default parameters, aligned with the experiment code / paper.
 
-二组 Ours 默认参数:
-- ``DEFAULT_PAPER_PARAMS``: 论文参数敏感性网格最优 (N, alpha, lambda) = (3, 0.03, 0.85)。
-- ``DEFAULT_FROZEN_REPUBLISH_PARAMS``: 20260720 冻结复现图配置 (N=2, alpha=0.03, lambda=1.0)。
+Two sets of Ours defaults:
+- ``DEFAULT_PAPER_PARAMS``: grid optimum of the paper's parameter sweep,
+  (N, alpha, lambda) = (3, 0.03, 0.85).
+- ``DEFAULT_FROZEN_REPUBLISH_PARAMS``: 20260720 frozen reproduction config,
+  (N=2, alpha=0.03, lambda=1.0).
 
-实验代码 `OursCoverageGeneric` 的旧默认值为 m=2 / gamma=0.7 / topk(N)=3 /
-alpha=0.02 / 无 lambda(即 lambda=1),与二者均不同,已在 README 注明。
+The experiment code's ``OursCoverageGeneric`` old defaults were m=2 / gamma=0.7 /
+topk(N)=3 / alpha=0.02 / no lambda (i.e. lambda=1), which differ from both sets.
 """
 
 from __future__ import annotations
 
-# ---- 查询 / 构图上限(与 scripts/eval_rag_at5.py 一致)----
-MAX_Q = 16          # 查询实体最大数
-MAX_REL = 6         # 查询关系最大数
-MAX_DOC_ENT = 24    # 每条款(corpus doc)最大实体数
-MAX_DOC_REL = 16    # 每条款关系对最大数
+# ---- Query / construction caps (same as scripts/eval_rag_at5.py) ----
+MAX_Q = 16          # max query entities
+MAX_REL = 6         # max query relations
+MAX_DOC_ENT = 24    # max entities per clause (corpus doc)
+MAX_DOC_REL = 16    # max relation pairs per clause
 
-# ---- Ours 检索结构上限(与运行脚本一致)----
-EXP_CAP = 300          # 每条条款 BFS 扩展节点上限
-LOCAL_CAP = 512        # 每条款局部边上限
-GLOBAL_EDGE_CAP = 5000 # 全局边取前 N 条
-Q_CAP = 10             # 查询实体按长度截断上限
+# ---- Ours retrieval structure caps (same as the run scripts) ----
+EXP_CAP = 300          # max BFS expansion nodes per clause
+LOCAL_CAP = 512        # max local edges per clause
+GLOBAL_EDGE_CAP = 5000 # keep the first N global edges
+Q_CAP = 10             # query entities truncated by length
 
-# ---- 默认输出 ----
+# ---- Default output ----
 DEFAULT_TOP_K = 5
 
 DEFAULT_PAPER_PARAMS = {
-    "n": 3,            # 实体聚合大小(论文参数网格的 N)
-    "m": 2,            # BFS 扩展跳数
-    "gamma": 0.7,      # 层级衰减
-    "alpha": 0.03,     # 子图规模惩罚
-    "lambda_": 0.85,   # 关系权重
+    "n": 3,            # entity aggregation size (the paper grid's N)
+    "m": 2,            # BFS expansion hops
+    "gamma": 0.7,      # hierarchy decay
+    "alpha": 0.03,     # subgraph size penalty
+    "lambda_": 0.85,   # relation weight
     "top_k": DEFAULT_TOP_K,
     "idf_power": 0.25,
     "use_rel": True,
@@ -59,7 +61,7 @@ DEFAULT_FROZEN_REPUBLISH_PARAMS = {
     "q_cap": Q_CAP,
 }
 
-# ---- 停用词(与 eval_rag_at5.py 一致)----
+# ---- Stop words (same as eval_rag_at5.py) ----
 STOP_EN = {
     "the", "a", "an", "and", "or", "of", "to", "in", "on", "for", "with", "by",
     "from", "as", "at", "is", "are", "was", "were", "be", "been", "being", "that",

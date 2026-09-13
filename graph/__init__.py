@@ -1,4 +1,4 @@
-"""graph —— 离线构图 + 查询图解析。"""
+"""Offline graph construction + query-graph resolution."""
 
 from graph.builder import (
     DeterministicGraphBuilder,

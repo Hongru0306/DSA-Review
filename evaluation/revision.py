@@ -1,11 +1,13 @@
-"""修订 / 编辑 / 嵌入类评测指标(规范审查管线)。
+"""Revision / edit / embedding evaluation metrics (construction review pipeline).
 
-移植 ``scripts/run_construction_review_v2.py``:
-- ``revision_edit_fragments``: 用 ``difflib.SequenceMatcher`` 提取相对原句的编辑片段
-  (Ratcliff-Obershelp,非 Levenshtein)。
-- ``revision_diff_char_prf``: 编辑负载上的字符 PRF,避免整句复制的虚高。
-- ``embedding_prf``: BERTScore 风格 —— BGE 分块余弦,clip 到 [0,1]。
-- ``delta_embedding_prf``: 编辑方向的嵌入差向量余弦 × 长度比。
+Port of ``scripts/run_construction_review_v2.py``:
+- ``revision_edit_fragments``: extract edit fragments relative to the original
+  sentence with ``difflib.SequenceMatcher`` (Ratcliff-Obershelp, not Levenshtein).
+- ``revision_diff_char_prf``: character PRF over the edit payload, avoiding the
+  inflation from copying the whole sentence.
+- ``embedding_prf``: BERTScore-style -- BGE chunk cosine, clipped to [0,1].
+- ``delta_embedding_prf``: cosine of the edit-direction embedding difference
+  times the length ratio.
 """
 
 from __future__ import annotations
@@ -20,7 +22,7 @@ from utils.text import normalized_chars, normalize_space
 
 
 def revision_char_prf(prediction, reference) -> tuple[float, float, float]:
-    """仅保留数字 / 英文 / 汉字的多重集 PRF(审查管线口径)。"""
+    """Multiset PRF over digits / latin / CJK only (review-pipeline convention)."""
     pred = normalized_chars(prediction)
     gold = normalized_chars(reference)
     if not pred or not gold:
@@ -33,9 +35,10 @@ def revision_char_prf(prediction, reference) -> tuple[float, float, float]:
 
 
 def revision_edit_fragments(original, revised) -> list[str]:
-    """只返回相对原句引入的文本片段(替换 / 插入 / 显式删除)。
+    """Return only the text introduced relative to the original sentence (replace / insert / explicit delete).
 
-    完全复制的上下文被排除,防止大段抄写获得高修订 F1。
+    Copied context is excluded, so that copying a large span cannot earn a high
+    revision F1.
     """
     source = normalize_space(original)
     target = normalize_space(revised)
@@ -57,7 +60,7 @@ def revision_diff_char_prf(
     prediction,
     reference,
 ) -> tuple[float, float, float, list[str], list[str]]:
-    """编辑负载上的字符 PRF(修订评测主口径)。"""
+    """Character PRF over the edit payload (main revision-evaluation convention)."""
     predicted_fragments = revision_edit_fragments(original, prediction)
     reference_fragments = revision_edit_fragments(original, reference)
     if not predicted_fragments and not reference_fragments:
@@ -72,7 +75,7 @@ def revision_diff_char_prf(
 
 
 def revision_embedding_chunks(text) -> list[str]:
-    """把完整修订句切成语义单元(分句 + 去标点空段)。"""
+    """Split a complete revised sentence into semantic units (by sentence, dropping empty pieces)."""
     value = normalize_space(text)
     chunks = [
         chunk.strip(" \t\r\n，,；;。.!！?？:：")
@@ -87,7 +90,7 @@ def embedding_prf(
     reference_chunks: list[str],
     embeddings: dict[str, np.ndarray],
 ) -> tuple[float, float, float]:
-    """BERTScore 风格:整段修订的分块 BGE 嵌入余弦,clip [0,1]。"""
+    """BERTScore style: full-revision chunked BGE embedding cosine, clipped to [0,1]."""
     if not prediction_chunks and not reference_chunks:
         return 1.0, 1.0, 1.0
     if not prediction_chunks or not reference_chunks:
@@ -107,7 +110,7 @@ def delta_embedding_prf(
     reference,
     embeddings: dict[str, np.ndarray],
 ) -> tuple[float, float, float]:
-    """比较编辑的语义方向与幅度:``embedding(修订) - embedding(原文)``。"""
+    """Compare the semantic direction and magnitude of the edit: ``embedding(revised) - embedding(original)``."""
     source = normalize_space(original)
     predicted = normalize_space(prediction)
     gold = normalize_space(reference)

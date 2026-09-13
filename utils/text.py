@@ -1,4 +1,4 @@
-"""文本规范化 / 分词 / 抽取工具。"""
+"""Text normalization / tokenization / term extraction utilities."""
 
 from __future__ import annotations
 
@@ -13,44 +13,45 @@ try:
 
     jieba.setLogLevel(60)
     _HAS_JIEBA = True
-except Exception:  # pragma: no cover - 无 jieba 时走正则兜底
+except Exception:  # pragma: no cover - regex fallback when jieba is unavailable
     _HAS_JIEBA = False
 
 
 def normalize_space(text) -> str:
-    """合并空白并去除首尾(与 run_construction_review_v2.normalize_space 一致)。"""
+    """Collapse whitespace and strip (same as run_construction_review_v2.normalize_space)."""
     return re.sub(r"\s+", " ", str(text or "")).strip()
 
 
 def normalized_chars(text) -> str:
-    """仅保留数字 / 英文 / 汉字并小写(审查管线指标用)。"""
+    """Keep only digits / latin / CJK and lowercase (used by review-pipeline metrics)."""
     return re.sub(r"[^0-9A-Za-z一-鿿]", "", str(text or "")).lower()
 
 
 def normalized_span(text) -> str:
-    """去空白并移除条文说明占位符(生成引文 verbatim 校验用)。"""
+    """Drop whitespace and the clause-commentary placeholder (for verbatim quote checks)."""
     return re.sub(r"\s+", "", (text or "").replace("▼ 展开条文说明", "").replace("▼", ""))
 
 
 def quoted_spans(answer) -> List[str]:
-    """提取引号包裹的连续原文片段。"""
+    """Extract quoted contiguous source spans."""
     return re.findall(r'["“]([^"”]+)["”]', answer or "")
 
 
 def safe_name(text) -> str:
-    """文件名安全化。"""
+    """Sanitize a string for use as a file name."""
     return re.sub(r"[^A-Za-z0-9_.-]+", "_", str(text)).strip("_")
 
 
 def doc_cache_key(text) -> str:
-    """条款 / 语料切片的标准 SHA-1 缓存键(与 eval_rag_at5.doc_cache_key 一致)。"""
+    """Canonical SHA-1 cache key for a clause / corpus chunk (same as eval_rag_at5)."""
     return hashlib.sha1(normalize_space(text).encode("utf-8")).hexdigest()
 
 
 def extract_terms(text, max_terms: int = 48) -> List[str]:
-    """查询 / 条款词项抽取(与 eval_rag_at5.extract_terms 一致)。
+    """Query / clause term extraction (same as eval_rag_at5.extract_terms).
 
-    中文优先 jieba 二字以上汉字词,英文专名 + 小写词 + 相邻二元组,去停用词。
+    For Chinese, prefer jieba words of 2+ Han characters; for English, proper
+    nouns + lowercased words + adjacent bigrams; stop words are removed.
     """
     text = normalize_space(text)
     terms: List[str] = []
@@ -84,7 +85,7 @@ def extract_terms(text, max_terms: int = 48) -> List[str]:
     return out
 
 
-# ---- 确定性构图用(移植 build_graphrag_novel_context5_graph_local.py)----
+# ---- Deterministic graph construction (ported from build_graphrag_novel_context5_graph_local.py) ----
 
 TOKEN_RE = re.compile(r"[A-Za-z][A-Za-z'’.-]{2,}")
 SENTENCE_RE = re.compile(r"(?<=[.!?])\s+")

@@ -1,4 +1,4 @@
-"""pytest 共享夹具:确定性假编码器 + 微型合成语料/构图,免下载免联网。"""
+"""pytest shared fixtures: deterministic fake encoder + tiny synthetic corpus/graph, no downloads or network."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ import pytest
 
 from graph.builder import build_corpus_graph
 
-# 微型中文条款语料(4 篇,覆盖共现实体与关系)
+# Tiny Chinese clause corpus (4 docs, covering co-occurring entities and relations)
 CORPUS = [
     "混凝土构件浇筑完成后应进行保温保湿养护，养护时间不应少于14天。",
     "钢筋进场时应核验出厂合格证与复试报告，见证取样比例如表规定。",
@@ -19,7 +19,7 @@ CORPUS = [
 
 
 class FakeEncoder:
-    """按文本 SHA-1 种子生成确定性 L2 归一化嵌入(内积即余弦)。"""
+    """Deterministic L2-normalized embeddings seeded by text SHA-1 (inner product = cosine)."""
 
     def __init__(self, dim: int = 64):
         self.dim = dim
@@ -39,7 +39,7 @@ class FakeEncoder:
 
 
 class FakeLLM:
-    """返回预置响应的假 LLM,客户端测试用。"""
+    """Fake LLM returning a preset response, for client tests."""
 
     def __init__(self, text: str = "根据“混凝土”明确养护时间不少于14天。"):
         self.text = text

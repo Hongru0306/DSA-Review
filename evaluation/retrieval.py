@@ -1,9 +1,9 @@
-"""检索指标:Hit@k / Recall / Precision / MAP / MRR / nDCG / 覆盖率。
+"""Retrieval metrics: Hit@k / Recall / Precision / MAP / MRR / nDCG / coverage.
 
-两套口径(与实验代码一致的移植):
-- ``retrieval_metrics``: GraphRAG-Bench 口径,``dcg = Sum rel_i/log2(i+2)``。
-- ``review_retrieval_metrics``: 审查管线口径,``dcg = Sum 1/log2(rank+1)``,
-  另含 evidence coverage 与 spec 命中。
+Two conventions (ported to match the experiment code):
+- ``retrieval_metrics``: GraphRAG-Bench convention, ``dcg = Sum rel_i/log2(i+2)``.
+- ``review_retrieval_metrics``: review-pipeline convention, ``dcg = Sum 1/log2(rank+1)``,
+  plus evidence coverage and spec hits.
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ def retrieval_metrics(
     gold: Iterable[int],
     k: int = 5,
 ) -> dict[str, float]:
-    """端口对齐 ``scripts/eval_rag_at5.py`` retrieval_metrics。"""
+    """Port matching ``scripts/eval_rag_at5.py`` retrieval_metrics."""
     gold_set = set(gold)
     top = list(ranked[:k])
     first = next((i + 1 for i, d in enumerate(ranked) if d in gold_set), 0)
@@ -48,7 +48,7 @@ def review_retrieval_metrics(
     gold_specs: Iterable[str] = (),
     ranked_specs: Iterable[str] = (),
 ) -> dict[str, float]:
-    """端口对齐 ``scripts/run_construction_review_v2.py`` retrieval_metrics。"""
+    """Port matching ``scripts/run_construction_review_v2.py`` retrieval_metrics."""
     unique: list[int] = []
     seen: set[int] = set()
     for value in gold_values:
@@ -87,7 +87,7 @@ def coverage_metrics(
     ranked_doc_ids: Iterable[int],
     k: int,
 ) -> dict[str, float]:
-    """Top-10 检索表口径:去重后按 doc_id 算 ACC / Coverage / MRR / nDCG。"""
+    """Top-10 retrieval-table convention: dedup then compute ACC / Coverage / MRR / nDCG by doc_id."""
     gold = set(int(v) for v in gold_doc_ids)
     ranked: list[int] = []
     for value in list(ranked_doc_ids)[:k]:

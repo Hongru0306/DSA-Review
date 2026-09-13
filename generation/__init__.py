@@ -1,4 +1,4 @@
-"""generation —— 证据问答(QA)与条款归因审查(review)。"""
+"""Evidence QA and clause-grounded review generation."""
 
 from generation.prompts import (
     ENTITY_PROMPT,

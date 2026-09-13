@@ -1,9 +1,9 @@
-"""证据问答(Evidence -> Answer)生成与校验 / 修复。
+"""Evidence-to-answer QA generation with validation / repair.
 
-移植 ``run_construction_qa_long_generation_v42.py`` 的 prompt 与
-``run_construction_generation_20pct_20260713.py`` 的校验 / 修复循环:
+Ports the prompt from ``run_construction_qa_long_generation_v42.py`` and the
+validation / repair loop from ``run_construction_generation_20pct_20260713.py``:
 ``build_answer_prompt`` -> ``LLMClient.call_text`` -> ``valid_answer`` ->
-失败带修正重试(至多 3 次) -> ``repair_prediction`` 检索归因兜底。
+retry-with-correction (up to 3 times) -> ``repair_prediction`` retrieval-grounded fallback.
 """
 
 from __future__ import annotations
@@ -40,7 +40,7 @@ _FALLBACK_PROMPT = """你是建筑工程规范问答助手。请回答题目，�
 
 
 def split_question(question: str) -> tuple[str, str]:
-    """把题目按 ``\\n\\n`` 拆成 (上下文背景, 问题);拆不开时上下文为空。"""
+    """Split the question on ``\\n\\n`` into (context, query); empty context when there is no split."""
     normalized = question.replace("\r\n", "\n").strip()
     parts = normalized.split("\n\n", 1)
     if len(parts) == 2:
@@ -58,10 +58,11 @@ def clause_group(spec_id: str, clause: str) -> str:
 
 
 def v42_answer_prompt(row: dict[str, Any], corpus: dict[int, dict], topk: int, extra_instruction: str) -> str:
-    """v42 逐字模板(autotune/.../run_construction_qa_long_generation_v42.py build_prompt)。
+    """v42 verbatim template (autotune/.../run_construction_qa_long_generation_v42.py build_prompt).
 
-    注:原代码虽按 gold 文档数准备了三条证据 / 长度细则常量,但未拼入返回模板
-    (rules 常量仅作备查),此处保持一致,不额外插值。
+    Note: the source computes three evidence / length rule blocks keyed by gold
+    document count but never interpolates them into the returned template (the
+    rules constants are kept for reference only); this mirrors that behavior.
     """
     context, query = split_question(row["question"])
     top_hits = row.get("retrieved_top10", [])[:topk]
@@ -106,7 +107,7 @@ def build_answer_prompt(
     correction: str = "",
     top_k: int = 5,
 ) -> str:
-    """方法级 prompt:有检索证据走 v42 模板(校准方法带长度控制),否则回落通用模板。"""
+    """Method-level prompt: v42 template when retrieval evidence is present (calibrated methods get length control), else the generic fallback."""
     if row.get("retrieved_top10"):
         method_instruction = correction
         if method in {"Ours", "bge", "jina", "gte", "zhipu", "text-embedding-v3"}:
@@ -132,7 +133,7 @@ def build_answer_prompt(
     )
 
 
-# ---- 校验 ----
+# ---- Validation ----
 
 def valid_answer(row: dict[str, Any], answer: str, top_k: int = 5) -> tuple[bool, str]:
     length = len(answer)
@@ -164,7 +165,7 @@ def valid_answer(row: dict[str, Any], answer: str, top_k: int = 5) -> tuple[bool
     return True, ""
 
 
-# ---- 检索归因兜底修复 ----
+# ---- Retrieval-grounded fallback repair ----
 
 def select_retrieval_quote(row: dict[str, Any], draft: str, top_k: int = 5) -> str:
     query = normalized_span(f"{row.get('question', '')}{draft}")
@@ -200,7 +201,7 @@ def select_retrieval_quote(row: dict[str, Any], draft: str, top_k: int = 5) -> s
 
 
 def repair_prediction(row: dict[str, Any], draft: str, top_k: int = 5) -> str:
-    """仅用检索结果修复长度 / 引文格式,绝不参考 gold。"""
+    """Repair length / citation format using retrieval only, never gold labels."""
     answer = re.sub(r" thinking.*? response", "", draft or "", flags=re.S).strip()
     if any(term in answer for term in REFUSALS):
         answer = ""
@@ -265,7 +266,7 @@ def generate_answer(
     top_k: int = 5,
     max_tokens: int = 1200,
 ) -> dict[str, Any]:
-    """内容尝试 + 校验 + 检索归因修复;``client`` 需有 ``call_text(system, user, max_tokens=...)``。"""
+    """Content attempts + validation + retrieval-grounded repair; ``client`` needs ``call_text(system, user, max_tokens=...)``."""
     correction = ""
     last_answer = ""
     for content_attempt in range(1, 4):

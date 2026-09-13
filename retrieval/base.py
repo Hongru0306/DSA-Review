@@ -1,8 +1,8 @@
-"""检索引擎统一协议(实验代码的 duck-typing 协议,显式化为接口)。
+"""Unified retrieval protocol (the experiment code's duck-typing protocol, made explicit).
 
-检索行 schema:``{"method", "qid"/"question", "topK": [doc_idx, ...],
-"metrics": {...}}``。``rank(q)`` 返回全语料排序 ``list[int]``(best-first),
-调用方按需切片 ``[:top_k]``。
+Retrieval row schema: ``{"method", "qid"/"question", "topK": [doc_idx, ...],
+"metrics": {...}}``. ``rank(q)`` returns the full-corpus ordering ``list[int]``
+(best-first); callers slice ``[:top_k]`` as needed.
 """
 
 from __future__ import annotations
@@ -12,14 +12,14 @@ from typing import List
 
 
 class Retriever(ABC):
-    """所有检索器实现的接口。"""
+    """Interface implemented by every retriever."""
 
     name = "retriever"
 
     @abstractmethod
     def build(self, corpus: List[str], encoder) -> None:
-        """建立索引(corpus 为条款 / 语料切片文本列表,encoder 提供嵌入)。"""
+        """Build the index (corpus is a list of clause / chunk texts, encoder provides embeddings)."""
 
     @abstractmethod
     def rank(self, q: str) -> List[int]:
-        """返回全语料 doc 下标,按相关性降序。"""
+        """Return all corpus doc indices sorted by descending relevance."""

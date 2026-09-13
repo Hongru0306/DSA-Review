@@ -1,0 +1,32 @@
+# Optional dependencies for the real-RAG baseline adapters.
+# These are heavy and version-sensitive, so they are kept out of the main
+# requirements.txt; install them only when you need the corresponding baseline.
+#
+#   pip install -r requirements-baselines.txt
+#
+# Each adapter imports its framework lazily, so the rest of the package (Ours,
+# BM25, dense BGE, tests, demo) works without any of these installed.
+
+# --- GraphRAG (microsoft/graphrag) ---
+graphrag
+
+# --- LightRAG (HKUDS/LightRAG) ---
+lightrag-hku
+
+# --- HippoRAG (OSU-NLP-Group/HippoRAG) ---
+# No PyPI release; install from git. Note: it pins torch/transformers versions,
+# so install it in a separate environment if it conflicts with your main one.
+hippo-rag @ git+https://github.com/OSU-NLP-Group/HippoRAG.git
+
+# --- RAPTOR (parthsarthi03/raptor) ---
+# RAPTOR has no packaging metadata, so it cannot be pip-installed. Clone it and
+# put its root on PYTHONPATH instead:
+#
+#   git clone --depth 1 https://github.com/parthsarthi03/raptor.git third_party/raptor
+#   # Linux/macOS
+#   export PYTHONPATH="$PYTHONPATH:$PWD/third_party/raptor"
+#   # Windows (cmd)
+#   set PYTHONPATH=%PYTHONPATH%;%CD%\third_party\raptor
+#
+# RAPTOR also needs `faiss-cpu` and `tiktoken` (see its requirements.txt):
+#   pip install faiss-cpu tiktoken

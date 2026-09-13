@@ -1,16 +1,18 @@
-"""Ours —— 超图子图检索(论文 Algorithm 1 + 2)。
+"""Ours -- hypergraph subgraph retrieval (paper Algorithms 1 + 2).
 
-忠实移植 ``scripts/eval_rag_at5.py`` ``OursCoverageGeneric``。对每条候选条款子图
-``G_j``,以 ``omega_j(u)=idf(u)**p * gamma**hop(u)`` 加权做语义锚定聚合:
+Faithful port of ``scripts/eval_rag_at5.py`` ``OursCoverageGeneric``. For each
+candidate clause subgraph ``G_j`` it aggregates semantic anchors weighted by
+``omega_j(u)=idf(u)**p * gamma**hop(u)``:
 
-    N_e = Sum_t mean_top_N( M_Q[t,u] * omega_j(u) )          # 实体覆盖项
-    N_r = Sum_rho max_(u,rho,v) (M_Q[a,u]omega+ M_Q[b,v]omega)/2  # 关系项
+    N_e = Sum_t mean_top_N( M_Q[t,u] * omega_j(u) )          # entity coverage term
+    N_r = Sum_rho max_(u,rho,v) (M_Q[a,u]omega+ M_Q[b,v]omega)/2  # relation term
     Score = [ max(N_e + N_r - alpha*|V_j|, 0) ] / max(D_e + D_r, 1e-9)
-    paper_score_formula=True 时: [ max(N_e - alpha*|V_j|, 0) + lambda*N_r ]
-                                / max(D_e + lambda*D_r, 1e-9)
+    with paper_score_formula=True: [ max(N_e - alpha*|V_j|, 0) + lambda*N_r ]
+                                   / max(D_e + lambda*D_r, 1e-9)
 
-``D_e / D_r`` 为全局引用分(分母对全部候选恒定,不改变排序;两式排序等价)。
-参数对齐论文参数敏感性网格最优 (N, alpha, lambda) = (3, 0.03, 0.85)。
+``D_e / D_r`` are global reference scores (the denominator is constant across all
+candidates and does not change the ranking; the two forms rank equivalently).
+Parameters align with the paper sweep optimum (N, alpha, lambda) = (3, 0.03, 0.85).
 """
 
 from __future__ import annotations
@@ -28,7 +30,7 @@ from utils.text import doc_cache_key, extract_terms
 
 
 def topk_mean(mat: np.ndarray, k: int) -> np.ndarray:
-    """按行取 top-k 的均值;``k<=1`` 取 max,列数不足取全行均值。"""
+    """Row-wise mean of the top-k values; ``k<=1`` takes the max, fewer columns takes the full mean."""
     if mat.shape[1] == 0:
         return np.zeros(mat.shape[0], dtype=np.float32)
     if k <= 1:
@@ -61,14 +63,14 @@ class OursRetriever(Retriever):
         q_cap: int = 10,
         name: str | None = None,
     ):
-        self.n = int(n)          # 实体聚合大小(论文参数网格的 N)
-        self.m = int(m)          # BFS 扩展跳数
+        self.n = int(n)          # entity aggregation size (the paper grid's N)
+        self.m = int(m)          # BFS expansion hops
         self.gamma = float(gamma)
         self.alpha = float(alpha)
         self.lambda_ = float(lambda_)
         self.relation_weight = float(lambda_)
         self.idf_power = float(idf_power)
-        self.top_k = int(top_k)  # 输出 top-K
+        self.top_k = int(top_k)  # output top-K
         self.use_llm = use_llm
         self.use_rel = use_rel
         self.paper_score_formula = paper_score_formula
@@ -86,7 +88,7 @@ class OursRetriever(Retriever):
     def from_params(cls, params: dict[str, Any]) -> "OursRetriever":
         return cls(**params)
 
-    # ---- 附件接口(与实验代码兼容)----
+    # ---- Attachment hooks (kept for experiment-code compatibility) ----
 
     def attach_query_cache(self, cache: dict[str, dict[str, Any]] | None) -> None:
         self.qcache = cache or {}
@@ -94,7 +96,7 @@ class OursRetriever(Retriever):
     def attach_corpus_graph(self, graph: dict[str, dict[str, Any]] | None) -> None:
         self.corpus_graph = graph or {}
 
-    # ---- 建索引 ----
+    # ---- Index construction ----
 
     def build(
         self,
@@ -258,12 +260,12 @@ class OursRetriever(Retriever):
         else:
             self.exp_w_mat = np.zeros((self.n_docs, 0), dtype=np.float32)
 
-    # ---- 查询 ----
+    # ---- Query ----
 
     def query_terms_rels(self, q: str) -> tuple[list[str], list[list[str]]]:
         return resolve_query_graph(q, self.qcache, use_llm=self.use_llm)
 
-    # ---- 打分 ----
+    # ---- Scoring ----
 
     def score(self, q: str) -> np.ndarray:
         q_terms, q_rels = self.query_terms_rels(q)

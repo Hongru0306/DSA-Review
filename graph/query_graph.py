@@ -1,4 +1,4 @@
-"""查询侧实体 / 关系解析:优先 LLM 缓存,否则启发式抽取。"""
+"""Query-side entity / relation resolution: LLM cache first, else heuristic extraction."""
 
 from __future__ import annotations
 
@@ -15,11 +15,11 @@ def resolve_query_graph(
     max_q: int = MAX_Q,
     max_rel: int = MAX_REL,
 ) -> tuple[list[str], list[list[str]]]:
-    """返回 (entities, relations) 查询子图。
+    """Return the (entities, relations) query subgraph.
 
-    ``qcache`` 格式:``{question: {"entities": [...], "relations": [["A","B"], ...]}}``
-    (由 ``graph.llm_builder.build_query_cache`` 生成)。无缓存或不用 LLM 时,
-    退化为 ``extract_terms`` 启发式实体、空关系。
+    ``qcache`` format: ``{question: {"entities": [...], "relations": [["A","B"], ...]}}``
+    (produced by ``graph.llm_builder.build_query_cache``). Without a cache or
+    without an LLM, falls back to ``extract_terms`` heuristic entities and no relations.
     """
     if use_llm and qcache and question in qcache:
         obj = qcache.get(question) or {}
