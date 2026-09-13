@@ -6,6 +6,8 @@ This repository provides the graph construction, retrieval, generation, and eval
 
 All relevant resources will be released upon acceptance.
 
+---
+
 ## Contents
 
 - [Module Structure](#module-structure)
@@ -33,8 +35,6 @@ pip install -r requirements.txt        # or pip install -e .
 cd <repo>
 python -c "from retrieval.ours import OursRetriever"
 ```
-
----
 
 ## Quick Start
 
