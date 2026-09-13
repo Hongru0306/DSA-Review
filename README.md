@@ -18,11 +18,11 @@ All relevant resources will be released upon acceptance.
 
 ## Module Structure
 
-graph/         graph construction
-retrieval/     retrieval methods (ours + baselines)
-generation/    answer and review generation
-evaluation/    retrieval and generation metrics
-llm/           LLM client
+    graph/         graph construction
+    retrieval/     retrieval methods (ours + baselines)
+    generation/    answer and review generation
+    evaluation/    retrieval and generation metrics
+    llm/           LLM client
 
 Modules are imported as top-level packages. The repository root is the source root.
 
