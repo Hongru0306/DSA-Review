@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dsa-review"
+version = "0.1.0"
+description = "DSA-Review 核心算法库:超图子图检索(Ours)+ 对比基线 + 生成 + 评测指标(不含数据)"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.24",
+]
+
+[tool.setuptools]
+py-modules = ["config", "encoder"]
+
+[tool.setuptools.packages.find]
+include = ["retrieval*", "graph*", "generation*", "evaluation*", "llm*", "utils*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
