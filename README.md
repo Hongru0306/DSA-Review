@@ -18,13 +18,11 @@ All relevant resources will be released upon acceptance.
 
 ## Module Structure
 
-| Module | Contents |
-|---|---|
-| Graph construction `graph` | Corpus segmentation → entity / relation graph (deterministic, no LLM; or LLM-incremental caching); query entity / relation parsing |
-| Retrieval `retrieval` | **Ours** hypergraph subgraph retrieval (paper Alg. 1 + 2) + baselines GraphRAG-lite / HippoRAG-lite / LightRAG-lite / RAPTOR-lite / Dense BGE / BM25 |
-| Generation `generation` | Evidence-grounded QA (evidence → answer, v42 citation / length calibration + validation and repair); clause-attributed review (paper Alg. 3); centralized prompts |
-| Evaluation `evaluation` | Retrieval Hit/Recall/Precision/MAP/MRR/nDCG/coverage; generation Char/Token F1, EM, ROUGE-L, BLEU1; revision diff / BERTScore-style embedding F1; aggregation |
-| LLM `llm` | Unified DeepSeek / Qwen-vLLM client (thinking disabled, JSON mode, retries, JSON repair) |
+graph/         graph construction
+retrieval/     retrieval methods (ours + baselines)
+generation/    answer and review generation
+evaluation/    retrieval and generation metrics
+llm/           LLM client
 
 Modules are imported as top-level packages. The repository root is the source root.
 
