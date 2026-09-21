@@ -90,6 +90,11 @@ bm25 = BM25();  bm25.build(corpus, encoder)
 
 BibTeX will be added upon acceptance.
 
-## License
+## License and Usage Restrictions
 
-To be determined.
+This repository is provided solely for peer review and reproduction of the results reported in the accompanying manuscript.
+
+Prior to acceptance of the manuscript, redistribution, public dissemination, and use for further development or derivative works are prohibited. Modifications are permitted only as necessary to reproduce and verify the reported results during peer review.
+
+The license governing subsequent use will be announced upon acceptance. Acceptance alone does not grant additional usage rights.
+
