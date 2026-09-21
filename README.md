@@ -32,6 +32,8 @@ python -X utf8 examples/demo.py
 
 The example uses a small synthetic corpus and a deterministic test encoder to demonstrate retrieval and metric computation with BM25 and dense retrieval. It does not require model downloads or an LLM endpoint. The printed scores are example outputs, not benchmark results.
 
+Time: Installation typically takes less than 30 minutes, depending on network speed.
+
 ## Model Configuration
 
 For model-backed inference, configure the LLM endpoint and embedding model. Use the model identifiers specified by the experiment configuration.
