@@ -22,6 +22,8 @@ python -m pip install -r requirements.txt
 
 Run the commands below from the repository root. Install the additional dependencies specified by the selected baseline configuration when running external baseline frameworks.
 
+Time: Installation typically takes less than 30 minutes, depending on network speed.
+
 ## Quick Start
 
 Run the lightweight retrieval example:
@@ -31,8 +33,6 @@ python -X utf8 examples/demo.py
 ```
 
 The example uses a small synthetic corpus and a deterministic test encoder to demonstrate retrieval and metric computation with BM25 and dense retrieval. It does not require model downloads or an LLM endpoint. The printed scores are example outputs, not benchmark results.
-
-Time: Installation typically takes less than 30 minutes, depending on network speed.
 
 ## Model Configuration
 
