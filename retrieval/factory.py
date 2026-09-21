@@ -33,9 +33,12 @@ from retrieval.lightrag import (
     async_embedding_from_encoder,
     async_llm_from_client,
 )
+from retrieval.ours import OursRetriever
 from retrieval.raptor import RaptorRetriever
 
 _ALIASES = {
+    "ours": "ours",
+    "ours-no-rel": "ours_no_rel",
     "bm25": "bm25",
     "naive": "dense",
     "naiverag": "dense",
@@ -78,6 +81,11 @@ def build_retriever(
     if key is None:
         raise ValueError(f"Unknown retriever '{name}'. Known names: {', '.join(RETRIEVER_NAMES)}")
 
+    if key == "ours":
+        return OursRetriever(**kwargs)
+    if key == "ours_no_rel":
+        kwargs.setdefault("use_rel", False)
+        return OursRetriever(**kwargs)
     if key == "bm25":
         return BM25(**kwargs)
     if key == "dense":

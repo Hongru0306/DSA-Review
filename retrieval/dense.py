@@ -25,4 +25,4 @@ class DenseNaive(Retriever):
 
     def rank(self, q: str) -> List[int]:
         qe = self.encoder.encode_batch([q])[0]
-        return list(np.argsort(self.embs @ qe)[::-1])
+        return [int(i) for i in np.argsort(self.embs @ qe)[::-1]]

@@ -210,6 +210,7 @@ class LLMClient:
         if not api_key.strip():
             raise RuntimeError("api_key is required")
         self.api_key = api_key.strip()
+        self.base_url = base_url.rstrip("/")
         self.endpoint = normalize_chat_url(base_url)
         self.model = model
         self.max_retries = max_retries

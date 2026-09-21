@@ -1,0 +1,74 @@
+# GraphRAG-Bench experiment configuration.
+# Suite: benchmarks/graphrag_bench/  (prepare -> infer -> evaluate)
+# Protocol and metric definitions: docs/benchmark_protocol.md
+
+name: graphrag_bench
+subset: novel
+
+data:
+  # local: read <local_dir>/corpus.jsonl + queries.jsonl (already in pipeline schema)
+  # huggingface: pull from the GraphRAG-Bench dataset repository
+  source: local
+  hf_repo: GraphRAG-Bench/GraphRAG-Bench
+  hf_config: novel
+  split: test
+  local_dir: data/graphrag_bench/novel
+  prepared_dir: outputs/graphrag_bench/prepared
+  output_dir: outputs/graphrag_bench
+  # Override these when the source uses different field names.
+  field_map: {}
+  sample:
+    size: null          # null = whole set; int = deterministic subset of this size
+    seed: 20260101
+
+corpus:
+  # deterministic: build the entity/relation graph from the corpus (no LLM, no labels)
+  # cache:         load corpus.graph_cache
+  # none:          no graph (dense / BM25 / framework baselines only)
+  build_graph: deterministic
+  graph_cache: null
+  max_entities: 24
+  max_relations: 48
+
+retrieval:
+  top_k: 5
+  methods:
+    - ours
+    - bm25
+    - naive
+  ours:
+    n: 3
+    m: 2
+    gamma: 0.7
+    alpha: 0.03
+    lambda_: 0.85
+  # Per-adapter constructor arguments (state directories etc.).
+  adapters:
+    lightrag:
+      working_dir: runs/lightrag
+      mode: hybrid
+    hipporag:
+      save_dir: runs/hipporag
+    graphrag:
+      workspace: runs/graphrag
+      community_level: 2
+    raptor:
+      top_k: 10
+
+generation:
+  enabled: true
+  top_k: 5
+
+evaluation:
+  k: [5, 10]
+  group_by: []          # e.g. [hop] when the subset carries a hop label
+
+models:
+  llm:
+    api_key_env: LLM_API_KEY
+    base_url_env: LLM_BASE_URL
+    model_env: LLM_MODEL
+    default_base_url: https://api.deepseek.com
+    default_model: deepseek-v4-flash
+  embedding:
+    model_env: EMBEDDING_MODEL

@@ -1,90 +1,131 @@
 # DSA-Review
 
-Official implementation of **Dual-Subgraph Alignment for Automated Construction Document Review**.
+Implementation of **No Passage Is an Island: Dual-Subgraph Alignment for Context-Aware Construction Document Review**.
 
-This repository provides the graph construction, retrieval, generation, and evaluation code for the paper. No data files are included. All inputs are passed as JSON dicts or `list[str]`.
+This repository provides the DSA-Review inference pipeline, scripts for running inference and evaluation on benchmark, and runnable examples of the document review workflow.
 
-All relevant resources will be released upon acceptance.
+## Overview
 
----
+DSA-Review retrieves supporting evidence by aligning context-enriched query subgraphs with subgraphs constructed from the reference corpus.
 
-## Contents
+**Context-Enriched Subgraph Fusion (CESF)** incorporates surrounding context into passage representations and fuses the resulting entity and relation subgraphs into a shared knowledge structure.
 
-- [Module Structure](#module-structure)
-- [Installation and Import](#installation-and-import)
-- [Quick Start](#quick-start)
-- [Testing](#testing)
-- [Data Schema](#data-schema)
-- [Retrieval Usage](#retrieval-usage)
-- [What Is Not Included](#what-is-not-included)
+**Query Subgraph Alignment and Retrieval (QSAR)** constructs a query subgraph, identifies candidate regions in the corpus graph, and ranks supporting passages through subgraph alignment. The retrieved evidence is then used for answer generation or document review.
 
-## Module Structure
-
-    graph/         graph construction
-    retrieval/     retrieval methods (ours + baselines)
-    generation/    answer and review generation
-    evaluation/    retrieval and generation metrics
-    llm/           LLM client
-
-Modules are imported as top-level packages. The repository root is the source root.
-
-## Installation and Import
+## Installation
 
 ```bash
-pip install -r requirements.txt        # or pip install -e .
-cd <repo>
-python -c "from retrieval.ours import OursRetriever"
+git clone https://github.com/Hongru0306/DSA-Review.git
+cd DSA-Review
+python -m pip install -r requirements.txt
 ```
+
+Run the commands below from the repository root. Install the additional dependencies specified by the selected baseline configuration when running external baseline frameworks.
 
 ## Quick Start
 
-Offline demo. No data, models, or network required.
+Run the lightweight retrieval example:
 
 ```bash
-PYTHONIOENCODING=utf-8 python examples/demo.py
+python -X utf8 examples/demo.py
 ```
 
-Synthesizes a 5-clause corpus, builds the graph deterministically, and runs all methods plus retrieval metrics.
+The example uses a small synthetic corpus and a deterministic test encoder to demonstrate retrieval and metric computation with BM25 and dense retrieval. It does not require model downloads or an LLM endpoint. The printed scores are example outputs, not benchmark results.
+
+## Model Configuration
+
+For model-backed inference, configure the LLM endpoint and embedding model. Use the model identifiers specified by the experiment configuration.
+
+```bash
+export LLM_API_KEY="YOUR_API_KEY"
+export LLM_BASE_URL="YOUR_LLM_ENDPOINT"
+export LLM_MODEL="YOUR_LLM_MODEL_ID"
+export EMBEDDING_MODEL="YOUR_EMBEDDING_MODEL_ID_OR_LOCAL_PATH"
+```
+
+In PowerShell, assign these variables using `$env:VARIABLE_NAME = "value"`.
+
+## Document Review Example
+
+After configuring the models, run the example review workflow:
+
+```bash
+python -X utf8 examples/review_demo.py \
+  --input examples/review_example.json \
+  --output outputs/example/review.json
+```
+
+The example demonstrates how a passage and its surrounding context are processed to retrieve supporting clauses and produce a review result. The output records the retrieved evidence, assessment, and suggested revision.
+
+## GraphRAG-Bench
+
+The public benchmark data are available from the [GraphRAG-Bench dataset repository](https://huggingface.co/datasets/GraphRAG-Bench/GraphRAG-Bench).
+
+The experiment configuration in `configs/graphrag_bench.yaml` specifies the evaluated subset, input locations, model settings, retrieval parameters, and evaluation settings. See `docs/benchmark_protocol.md` for corpus preparation, evaluation sample selection, metric definitions, and aggregation rules.
+
+### Prepare the benchmark
+
+```bash
+python -X utf8 -m benchmarks.graphrag_bench.prepare \
+  --config configs/graphrag_bench.yaml
+```
+
+### Run inference
+
+```bash
+python -X utf8 -m benchmarks.graphrag_bench.infer \
+  --config configs/graphrag_bench.yaml \
+  --output-dir outputs/graphrag_bench
+```
+
+### Evaluate predictions
+
+```bash
+python -X utf8 -m benchmarks.graphrag_bench.evaluate \
+  --config configs/graphrag_bench.yaml \
+  --predictions outputs/graphrag_bench/predictions.jsonl \
+  --output outputs/graphrag_bench/metrics.json
+```
+
+Inference and evaluation are separate steps, allowing saved predictions to be rescored without repeating answer generation.
+
+### Outputs
+
+```text
+outputs/graphrag_bench/
+├── predictions.jsonl
+├── metrics.json
+└── run_config.json
+```
+
+`predictions.jsonl` stores per-query predictions and retrieved evidence. `metrics.json` contains aggregate evaluation results. `run_config.json` records the resolved experiment settings, model identifiers, and code and data versions.
+
+To rerun an experiment, use the corresponding configuration and the same benchmark version and evaluation protocol. Model-backed outputs may vary across repeated runs or changes to the model service.
+
+## Repository Structure
+
+```text
+benchmarks/     Public benchmark preparation, inference, and evaluation
+configs/        Experiment configurations
+docs/           Benchmark protocol and implementation documentation
+graph/          Corpus and query graph construction
+retrieval/      DSA-Review retrieval and baseline adapters
+generation/     Evidence-based answer generation and document review
+evaluation/     Retrieval, generation, and review metrics
+llm/            LLM client
+encoder.py      Text embedding interface
+examples/       Runnable examples
+tests/          Unit tests
+utils/          Shared utilities
+```
 
 ## Testing
 
 ```bash
-pytest -q
+python -m pytest tests -q
 ```
 
-All tests use injected fake encoders and a tiny synthetic corpus, so no downloads or network access are needed.
-
-## Data Schema
-
-**Input contract**:
-
-- **corpus**: `List[str]`, each entry is a clause / corpus chunk of text.
-- **corpus_graph (optional, offline graph artifact)**: `Dict[str, Dict]`, keyed by `sha1(norm(text))` (see `utils.text.doc_cache_key`), with values `{"entities": [...], "relations": [["A","B"], ...], "llm_ok": bool}`. Build with `graph.build_corpus_graph(corpus)` (no LLM) or `graph.build_corpus_graph_cache(...)` (LLM).
-- **qcache (optional, query-side LLM cache)**: `Dict[str, Dict]`, `{question: {"entities": [...], "relations": [...]}}`; build with `graph.build_query_cache(questions, path, llm, concurrent)`.
-- **Retrieval row (output / generation input)**: `{"method", "qid", "question", "gold": [doc_idx], "retrieved_top10": [corpus rows, each with doc_id/spec_name/clause/text]}`.
-
-## Retrieval Usage
-
-```python
-from retrieval import OursRetriever, BM25
-from graph import build_corpus_graph
-from evaluation import retrieval_metrics
-
-ours = OursRetriever(n=3, alpha=0.03, lambda_=0.85)
-ours.build(corpus, encoder, corpus_graph=build_corpus_graph(corpus))   # encoder: object supporting encode_batch
-ranking = ours.rank("养护时间不应少于14天")[:5]
-print(retrieval_metrics(ranking, gold=[0], k=5))
-
-bm25 = BM25();  bm25.build(corpus, encoder)
-```
-
-`encoder` defaults to `encoder.SemanticEncoder` (BGE). Tests may inject a deterministic fake encoder (see `tests/conftest.py`).
-`OursRetrieverTorch` is the torch-vectorized scoring version of Ours (use after `.to_torch(device)`).
-
-## What Is Not Included
-
-- Data files and graph index pkl/jsonl artifacts. Only schemas and examples are defined.
-- Weak baselines outside the annotation / preview tasks (Random / SpecMarker / Length flagging heuristics), LLM-aug (HyDE / query2doc / IRCoT / FLARE), and RRF fusion.
+Unit tests check retrieval behavior and metric computation on small synthetic inputs. Public benchmark results are produced through the inference and evaluation workflow above.
 
 ## Citation
 
@@ -97,4 +138,3 @@ This repository is provided solely for peer review and reproduction of the resul
 Prior to acceptance of the manuscript, redistribution, public dissemination, and use for further development or derivative works are prohibited. Modifications are permitted only as necessary to reproduce and verify the reported results during peer review.
 
 The license governing subsequent use will be announced upon acceptance. Acceptance alone does not grant additional usage rights.
-

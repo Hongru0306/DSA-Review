@@ -11,13 +11,13 @@ It needs real endpoints and the optional baseline dependencies:
 - GraphRAG also needs an HTTP embeddings endpoint: GRAPHRAG_EMBEDDING_API_BASE,
   and GRAPHRAG_EMBEDDING_MODEL (defaults to EMBEDDING_MODEL).
 
-See requirements-baselines.txt for installing the frameworks. BM25 / dense
+See requirements-baselines.txt for installing the frameworks. Ours / BM25 / dense
 run without any optional dependency.
 
 Usage:
     python examples/run_baselines.py \
         --corpus data/corpus.jsonl --queries data/queries.jsonl \
-        --methods bm25,naive,graphrag,lightrag,hipporag,raptor --top-k 5
+        --methods ours,bm25,naive,graphrag,lightrag,hipporag,raptor --top-k 5
 """
 
 from __future__ import annotations
@@ -33,9 +33,10 @@ from typing import Any, List
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from evaluation import mean_100, retrieval_metrics
-from retrieval import build_retriever
+from graph import build_corpus_graph
+from retrieval import OursRetriever, build_retriever
 
-DEFAULT_METHODS = ["bm25", "naive"]
+DEFAULT_METHODS = ["ours", "bm25", "naive"]
 
 
 def _load_jsonl(path: Path) -> List[dict]:
@@ -90,6 +91,13 @@ def _method_kwargs(method: str, workdir: Path) -> dict:
     return {}
 
 
+def _build(retriever, corpus: List[str], encoder: Any, corpus_graph: dict) -> None:
+    if isinstance(retriever, OursRetriever):
+        retriever.build(corpus, encoder, corpus_graph=corpus_graph)
+    else:
+        retriever.build(corpus, encoder)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--corpus", type=Path, required=True)
@@ -104,6 +112,7 @@ def main() -> None:
     queries = _load_jsonl(args.queries)
     encoder = _build_encoder()
     llm_client = _build_llm()
+    corpus_graph = build_corpus_graph(corpus)
     methods = [m.strip() for m in args.methods.split(",") if m.strip()]
 
     print(f"corpus_docs={len(corpus)} queries={len(queries)} methods={methods}")
@@ -112,7 +121,7 @@ def main() -> None:
     for method in methods:
         kwargs = _method_kwargs(method, args.workdir)
         retriever = build_retriever(method, encoder=encoder, llm_client=llm_client, **kwargs)
-        retriever.build(corpus, encoder)
+        _build(retriever, corpus, encoder, corpus_graph)
 
         hits, recalls, mrrs, ndcgs = [], [], [], []
         for query in queries:

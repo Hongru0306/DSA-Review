@@ -1,4 +1,4 @@
-"""pytest shared fixtures: deterministic fake encoder + tiny synthetic corpus, no downloads or network."""
+"""pytest shared fixtures: deterministic fake encoder + tiny synthetic corpus/graph, no downloads or network."""
 
 from __future__ import annotations
 
@@ -7,7 +7,9 @@ import hashlib
 import numpy as np
 import pytest
 
-# Tiny Chinese clause corpus (4 docs)
+from graph.builder import build_corpus_graph
+
+# Tiny Chinese clause corpus (4 docs, covering co-occurring entities and relations)
 CORPUS = [
     "混凝土构件浇筑完成后应进行保温保湿养护，养护时间不应少于14天。",
     "钢筋进场时应核验出厂合格证与复试报告，见证取样比例如表规定。",
@@ -56,3 +58,8 @@ def encoder():
 @pytest.fixture
 def corpus():
     return list(CORPUS)
+
+
+@pytest.fixture
+def corpus_graph(corpus):
+    return build_corpus_graph(corpus)

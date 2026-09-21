@@ -59,4 +59,4 @@ class BM25(Retriever):
                 )
                 score += idf * tf[t] * (self.k1 + 1) / denom
             out.append(score)
-        return list(np.argsort(out)[::-1])
+        return [int(i) for i in np.argsort(out)[::-1]]

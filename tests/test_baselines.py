@@ -23,6 +23,8 @@ def test_simple_baseline_returns_full_order(factory, corpus, encoder):
     method.build(corpus, encoder)
     ranking = method.rank("混凝土养护时间不少于14天")
     assert sorted(ranking) == list(range(len(corpus)))
+    # The Retriever protocol promises List[int]; numpy ints would break JSON output.
+    assert all(type(index) is int for index in ranking)
 
 
 def test_bm25_ascii_corpus_ranks_matching_doc_first(encoder):

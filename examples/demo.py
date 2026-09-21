@@ -1,4 +1,4 @@
-"""End-to-end demo: synthetic corpus -> retrievers + metrics.
+"""End-to-end demo: synthetic corpus -> deterministic graph -> retrievers + metrics.
 
 No data files, no model downloads, no LLM required. Run:
     python examples/demo.py
@@ -6,7 +6,7 @@ No data files, no model downloads, no LLM required. Run:
 
 The real-RAG baseline adapters (GraphRAG / LightRAG / HippoRAG / RAPTOR) are not
 run here because they need their optional dependencies and an LLM endpoint; the
-offline BM25 / dense methods run without them. See requirements-baselines.txt.
+offline Ours / BM25 / dense methods run without them. See requirements-baselines.txt.
 """
 
 from __future__ import annotations
@@ -21,7 +21,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import numpy as np
 
 from evaluation import retrieval_metrics
-from retrieval import BM25, DenseNaive
+from graph import build_corpus_graph
+from retrieval import BM25, DenseNaive, OursRetriever
 
 
 class DummyEncoder:
@@ -56,8 +57,13 @@ QUESTIONS = [
 
 def main() -> None:
     encoder = DummyEncoder()
+    corpus_graph = build_corpus_graph(CORPUS)
+
+    ours = OursRetriever(n=3, alpha=0.03, lambda_=0.85)
+    ours.build(CORPUS, encoder, corpus_graph=corpus_graph)
 
     methods = {
+        "Ours": ours,
         "BM25": BM25(),
         "NaiveRAG": DenseNaive(),
     }

@@ -4,12 +4,16 @@ from __future__ import annotations
 
 import hashlib
 import re
+import warnings
 from typing import List
 
 from config import STOP_EN, STOP_ZH
 
 try:
-    import jieba
+    with warnings.catch_warnings():
+        # jieba imports pkg_resources, which emits a deprecation warning on import.
+        warnings.simplefilter("ignore")
+        import jieba
 
     jieba.setLogLevel(60)
     _HAS_JIEBA = True
